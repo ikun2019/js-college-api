@@ -58,7 +58,7 @@ exports.getSingleBlog = async (req, res) => {
     });
 
     if (response.results.length === 0) {
-      return res.status(404).json({ error: '指定した記事が存在しません' });
+      return res.status(404).json({ error: '指定された記事が存在しません' });
     }
 
     const page = response.results[0];
@@ -70,6 +70,37 @@ exports.getSingleBlog = async (req, res) => {
       metadata: metadata,
       markdown: mdString,
     });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'error' });
+  }
+};
+
+// @GET /api/blogs/tag/:tag
+exports.getTagBlogs = async (req, res) => {
+  console.log('@GET /api/blogs/tag/:tag getTagBlogs');
+  try {
+    const { tag } = req.params;
+
+    const response = await notion.databases.query({
+      database_id: process.env.NOTION_DATABASE_ID,
+      filter: {
+        property: 'Tags',
+        multi_select: {
+          contains: tag,
+        }
+      },
+    });
+
+    if (response.results.length === 0) {
+      return res.status(404).json({ error: '指定された記事が存在しません' });
+    };
+
+    const blogs = response.results;
+    const metadatas = blogs.map((blog) => {
+      return getPageMetaData(blog)
+    });
+    res.status(200).json(metadatas);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'error' });
