@@ -28,6 +28,12 @@ exports.getAllBlogs = async (req, res) => {
   try {
     const response = await notion.databases.query({
       database_id: process.env.NOTION_DATABASE_ID,
+      filter: {
+        property: 'Published',
+        checkbox: {
+          equals: true,
+        }
+      }
     });
     const blogs = response.results;
     const metadatas = blogs.map((blog) => {
