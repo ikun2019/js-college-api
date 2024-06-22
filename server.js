@@ -12,6 +12,6 @@ app.use(express.json(), express.urlencoded({ extended: true }), cors());
 app.use('/api/blogs', blogsRouter);
 
 // * アプリの起動
-app.listen({ port: process.env.PORT }, () => {
+app.listen({ port: process.env.PORT || 8080 }, () => {
   console.log('Server is running');
 });
