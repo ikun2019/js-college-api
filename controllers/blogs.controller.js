@@ -1,5 +1,8 @@
 const { NotionToMarkdown } = require('notion-to-md');
 const notion = require('../lib/notionAPI');
+const fs = require('fs');
+
+const notionDatabaseId = fs.existsSync(process.env.NOTION_DATABASE_ID_FILE) ? fs.readFileSync(process.env.NOTION_DATABASE_ID_FILE, 'utf8').trim() : process.env.NOTION_DATABASE_ID;
 
 // * メタ情報を取得するための関数
 const getPageMetaData = (blog) => {
@@ -27,7 +30,7 @@ exports.getAllBlogs = async (req, res) => {
   console.log('@GET /api/blogs getAllBlogs');
   try {
     const response = await notion.databases.query({
-      database_id: process.env.NOTION_DATABASE_ID,
+      database_id: notionDatabaseId,
       filter: {
         property: 'Published',
         checkbox: {
@@ -52,7 +55,7 @@ exports.getSingleBlog = async (req, res) => {
   try {
     const { slug } = req.params;
     const response = await notion.databases.query({
-      database_id: process.env.NOTION_DATABASE_ID,
+      database_id: notionDatabaseId,
       filter: {
         property: 'Slug',
         formula: {
@@ -89,7 +92,7 @@ exports.getTagBlogs = async (req, res) => {
     const { tag } = req.params;
 
     const response = await notion.databases.query({
-      database_id: process.env.NOTION_DATABASE_ID,
+      database_id: notionDatabaseId,
       filter: {
         property: 'Tags',
         multi_select: {
