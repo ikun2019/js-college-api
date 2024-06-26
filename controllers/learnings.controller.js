@@ -81,9 +81,7 @@ exports.getAllLearnings = async (req, res) => {
       return getPageMetaData(learning, 'parent');
     });
 
-    res.status(200).json({
-      metadatas: metadatas,
-    });
+    res.status(200).json(metadatas);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'error' });
