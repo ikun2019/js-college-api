@@ -51,6 +51,11 @@ const getNestedMetaData = async (blockId) => {
   for (const block of blocks) {
     if (block.type === 'child_database') {
       const databaseItems = await getDatabaseItems(block.id);
+
+      databaseItems.map(item => {
+        console.log('item =>', item);
+      })
+
       nestedMetaDatas.push({
         database_id: block.id,
         items: databaseItems
@@ -60,6 +65,7 @@ const getNestedMetaData = async (blockId) => {
       nestedMetaDatas = nestedMetaDatas.concat(childMetadatas);
     }
   }
+
   return nestedMetaDatas;
 };
 
@@ -171,11 +177,30 @@ exports.getSingleLearningPage = async (req, res) => {
     const childPage = childResponse.results[0];
     const metadata = getPageMetaData(childPage, 'child');
     const mdBlock = await n2m.pageToMarkdown(childPage.id);
-    const mdString = n2m.toMarkdownString(mdBlock)
+    const mdString = n2m.toMarkdownString(mdBlock);
+
+    // 見出しタグの取得のための動的インポート
+    const { unified } = await import('unified');
+    const remarkParse = (await import('remark-parse')).default;
+    const { visit } = await import('unist-util-visit');
+
+    const headings = [];
+    const processor = unified()
+      .use(remarkParse)
+      .use(() => (tree) => {
+        visit(tree, 'heading', (node) => {
+          const text = node.children.map((child) => (child.value ? child.value : '')).join('');
+          headings.push({ level: node.depth, text });
+        });
+      });
+
+    const parsedTree = processor.parse(mdString.parent);
+    processor.runSync(parsedTree);
 
     res.status(200).json({
       metadata: metadata,
       markdown: mdString,
+      headings: headings,
     }
     );
   } catch (err) {
