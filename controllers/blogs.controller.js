@@ -38,11 +38,9 @@ exports.getSingleBlog = async (req, res) => {
   try {
     const { slug } = req.params;
     const response = await supabase.from('blogs').select('*').eq('slug', slug).single();
-
-
-    // if (response.results.length === 0) {
-    //   return res.status(404).json({ error: '指定された記事が存在しません' });
-    // }
+    if (!response.data) {
+      return res.status(404).json({ error: '指定された記事が存在しません' });
+    }
 
     const page = response.data;
     const metadata = getPageMetaData(page);
@@ -64,24 +62,15 @@ exports.getTagBlogs = async (req, res) => {
   try {
     const { tag } = req.params;
 
-    const response = await notion.databases.query({
-      database_id: notionDatabaseId,
-      filter: {
-        property: 'Tags',
-        multi_select: {
-          contains: tag,
-        }
-      },
-    });
-
-    if (response.results.length === 0) {
+    const response = await supabase.from('blogs').select('*').ilike('tags', tag);
+    if (!response.data) {
       return res.status(404).json({ error: '指定された記事が存在しません' });
-    };
+    }
 
-    const blogs = response.results;
-    const metadatas = blogs.map((blog) => {
+    const metadatas = response.data.map((blog) => {
       return getPageMetaData(blog)
     });
+
     res.status(200).json(metadatas);
   } catch (err) {
     console.error(err);
