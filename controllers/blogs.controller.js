@@ -1,48 +1,31 @@
-const { NotionToMarkdown } = require('notion-to-md');
-const notion = require('../lib/notionAPI');
+const supabase = require('../lib/supabaseAPI');
 const fs = require('fs');
-
-const notionDatabaseId = fs.existsSync(process.env.NOTION_DATABASE_ID_FILE) ? fs.readFileSync(process.env.NOTION_DATABASE_ID_FILE, 'utf8').trim() : process.env.NOTION_DATABASE_ID;
 
 // * メタ情報を取得するための関数
 const getPageMetaData = (blog) => {
-  const getTags = (tags) => {
-    const allTags = tags.map((tag) => {
-      return tag.name;
-    });
-    return allTags;
-  };
   return {
-    title: blog.properties.Title.title[0]?.plain_text || '',
-    description: blog.properties.Description.rich_text[0]?.plain_text || '',
-    slug: blog.properties.Slug.rich_text[0]?.plain_text || '',
-    date: blog.properties.Date.date.start,
-    tags: getTags(blog.properties.Tags.multi_select),
-    image: blog.properties.Image.files[0] || null,
-  };
+    title: blog.title,
+    description: blog.description,
+    slug: blog.slug,
+    date: blog.created_at,
+    tags: blog.tags ? blog.tags.split(',') : [],
+    image_name: blog.image_name,
+    image_url: blog.image_url,
+  }
 }
-
-// * notion-to-mdの初期化
-const n2m = new NotionToMarkdown({ notionClient: notion });
 
 // @GET /api/blogs
 exports.getAllBlogs = async (req, res) => {
   console.log('@GET /api/blogs getAllBlogs');
   try {
-    const response = await notion.databases.query({
-      database_id: notionDatabaseId,
-      filter: {
-        property: 'Published',
-        checkbox: {
-          equals: true,
-        }
-      }
+    const response = await supabase.from('blogs').select('*');
+    const blogsMetadatas = response.data.map((blog) => {
+      const metadata = getPageMetaData(blog);
+      return metadata;
     });
-    const blogs = response.results;
-    const metadatas = blogs.map((blog) => {
-      return getPageMetaData(blog);
-    })
-    res.status(200).json(metadatas);
+    res.status(200).json({
+      metadatas: blogsMetadatas
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'error' });
@@ -54,30 +37,20 @@ exports.getSingleBlog = async (req, res) => {
   console.log('@GET /api/blogs/:slug getSingleBlog');
   try {
     const { slug } = req.params;
-    const response = await notion.databases.query({
-      database_id: notionDatabaseId,
-      filter: {
-        property: 'Slug',
-        formula: {
-          string: {
-            equals: slug,
-          }
-        }
-      },
-    });
+    const response = await supabase.from('blogs').select('*').eq('slug', slug).single();
 
-    if (response.results.length === 0) {
-      return res.status(404).json({ error: '指定された記事が存在しません' });
-    }
 
-    const page = response.results[0];
+    // if (response.results.length === 0) {
+    //   return res.status(404).json({ error: '指定された記事が存在しません' });
+    // }
+
+    const page = response.data;
     const metadata = getPageMetaData(page);
-    const mdBlock = await n2m.pageToMarkdown(page.id);
-    const mdString = n2m.toMarkdownString(mdBlock);
+    const markdown = page.content;
 
     res.status(200).json({
       metadata: metadata,
-      markdown: mdString,
+      markdown: markdown,
     });
   } catch (err) {
     console.error(err);
