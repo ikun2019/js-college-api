@@ -1,5 +1,24 @@
 const express = require('express');
 const cors = require('cors');
+const cron = require('node-cron');
+
+const { fetchNotionData } = require('./services/notionService');
+const { saveBlogToSupabaes } = require('./services/supabaseService');
+
+// * notionデータをsupabaseに保存
+async function syncData() {
+  try {
+    const notionData = await fetchNotionData();
+    await saveBlogToSupabaes(notionData);
+  } catch (error) {
+    console.error('Error', error);
+  }
+};
+// * データの同期をするにあたっての定期的なスケジュール
+cron.schedule('0 * * * *', () => {
+  console.log('Running data sync');
+  syncData();
+});
 
 // * routerのインポート
 const blogsRouter = require('./routes/blogs.router');

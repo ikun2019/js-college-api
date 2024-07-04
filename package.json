@@ -14,8 +14,10 @@
 	},
 	"dependencies": {
 		"@notionhq/client": "^2.2.15",
+		"@supabase/supabase-js": "^2.44.2",
 		"cors": "^2.8.5",
 		"express": "^4.19.2",
+		"node-cron": "^3.0.3",
 		"notion-to-md": "^3.1.1",
 		"remark-parse": "^11.0.0",
 		"unified": "^11.0.5",
