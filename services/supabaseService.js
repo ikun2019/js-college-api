@@ -12,4 +12,15 @@ async function saveBlogToSupabaes(data) {
   }
 };
 
-module.exports = { saveBlogToSupabaes };
+async function saveLearningToSupabase(data) {
+  const { data: savedData, error } = await supabase.from('learnings').upsert(data, {
+    onConflict: ['slug'],
+  });
+  if (error) {
+    console.error('Error saving data to Supabase', error);
+  } else {
+    console.log('Data saved successfully', savedData);
+  }
+};
+
+module.exports = { saveBlogToSupabaes, saveLearningToSupabase };

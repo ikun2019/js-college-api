@@ -2,18 +2,22 @@ const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
 
-const { fetchNotionData } = require('./services/notionService');
-const { saveBlogToSupabaes } = require('./services/supabaseService');
+const { fetchBlogData, fetchLearningData } = require('./services/notionService');
+const { saveBlogToSupabaes, saveLearningToSupabase } = require('./services/supabaseService');
 
 // * notionデータをsupabaseに保存
 async function syncData() {
   try {
-    const notionData = await fetchNotionData();
-    await saveBlogToSupabaes(notionData);
+    const notionBlogsData = await fetchBlogData();
+    await saveBlogToSupabaes(notionBlogsData);
+    const notionLearningsData = await fetchLearningData();
+    await saveLearningToSupabase(notionLearningsData);
+    console.log('Notion Learnings Data =>', notionLearningsData);
   } catch (error) {
     console.error('Error', error);
   }
 };
+
 // * データの同期をするにあたっての定期的なスケジュール
 cron.schedule('0 * * * *', () => {
   console.log('Running data sync');
