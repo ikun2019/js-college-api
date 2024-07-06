@@ -10,7 +10,10 @@ const n2m = new NotionToMarkdown({ notionClient: notion });
 // * notionをmarkdownにする関数
 async function pageToMarkdown(pageId) {
   const mdBlock = await n2m.pageToMarkdown(pageId);
-  const mdString = n2m.toMarkdownString(mdBlock);
+  // child_databaseブロックをフィルタリング
+  const filteredMdBlock = mdBlock.filter(block => block.type !== 'child_database');
+  const mdString = n2m.toMarkdownString(filteredMdBlock);
+
   return {
     markdown: mdString,
   }
@@ -18,7 +21,6 @@ async function pageToMarkdown(pageId) {
 
 // * pageのメタデータを取得する関数
 async function getPageMetadata(page, parent) {
-  console.log('page =>', page);
   const getTags = (tags) => {
     return tags.map((tag) => tag.name).join(',');
   }
