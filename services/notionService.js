@@ -20,7 +20,7 @@ async function pageToMarkdown(pageId) {
 }
 
 // * pageのメタデータを取得する関数
-async function getPageMetadata(page, parent) {
+async function getPageMetadata(page, parent, type) {
   const getTags = (tags) => {
     return tags.map((tag) => tag.name).join(',');
   }
@@ -31,9 +31,9 @@ async function getPageMetadata(page, parent) {
   const imageFile = page.properties.Image?.files[0];
   const image_name = imageFile ? imageFile.name : null;
   const image_url = imageFile ? imageFile.file.url : null;
-  const published = page.properties.Published.checkbox;
-  const premium = page.properties.Premium.checkbox;
-  if (parent) {
+  const published = page.properties.Published?.checkbox;
+  const premium = page.properties.Premium?.checkbox;
+  if (parent && type === 'learning') {
     return {
       title,
       description,
@@ -42,9 +42,8 @@ async function getPageMetadata(page, parent) {
       image_name,
       image_url,
       premium,
-      published,
     };
-  } else {
+  } else if (!parent && type === 'learning') {
     return {
       title,
       description,
@@ -52,6 +51,15 @@ async function getPageMetadata(page, parent) {
       premium,
       published,
     }
+  } else {
+    return {
+      title,
+      description,
+      slug,
+      tags,
+      image_name,
+      image_url,
+    };
   }
 }
 
@@ -71,7 +79,7 @@ async function fetchBlogData() {
 
   const detailedPages = await Promise.all(
     pages.map(async (page) => {
-      const metadata = await getPageMetadata(page, true);
+      const metadata = await getPageMetadata(page, true, 'blog');
       const pageDetails = await pageToMarkdown(page.id);
       return {
         ...metadata,
@@ -87,12 +95,17 @@ async function fetchBlogData() {
 async function fetchChildDatabasePages(databaseId) {
   const response = await notion.databases.query({
     database_id: databaseId,
-    // TODO: filter
+    filter: {
+      property: 'Published',
+      checkbox: {
+        equals: true,
+      }
+    }
   });
   const pages = response.results;
   const detailPages = await Promise.all(
     pages.map(async (page) => {
-      const metadata = await getPageMetadata(page, false);
+      const metadata = await getPageMetadata(page, false, 'learning');
       const pageDetails = await pageToMarkdown(page.id);
       return {
         ...metadata,
@@ -102,6 +115,7 @@ async function fetchChildDatabasePages(databaseId) {
   );
   return detailPages;
 }
+
 // * 入れ子になったデータベースを取得する関数
 async function fetchNestedPages(pageId) {
   const response = await notion.blocks.children.list({ block_id: pageId });
@@ -131,7 +145,7 @@ async function fetchLearningData() {
 
   const detailPages = await Promise.all(
     learnings.map(async (learning) => {
-      const metadata = await getPageMetadata(learning, true);
+      const metadata = await getPageMetadata(learning, true, 'learning');
       const pageDetails = await pageToMarkdown(learning.id);
       const nestedPages = await fetchNestedPages(learning.id);
       return {
@@ -141,8 +155,33 @@ async function fetchLearningData() {
       }
     })
   );
-  console.log('detailPages =>', detailPages.flat());
   return detailPages.flat();
 }
 
-module.exports = { fetchBlogData, fetchLearningData };
+// * notionからunpublishedデータを取得する関数
+async function fetchBlogsUnpublishedData() {
+  const response = await notion.databases.query({
+    database_id: notionBlogDatabaseId,
+    filter: {
+      property: 'Published',
+      checkbox: {
+        equals: false,
+      }
+    }
+  });
+  return response.results.map((page) => page.properties.Slug.rich_text[0]?.plain_text);
+};
+async function fetchLearningsUnpublishedData() {
+  const response = await notion.databases.query({
+    database_id: notionLearningDatabaseId,
+    filter: {
+      property: 'Published',
+      checkbox: {
+        equals: false,
+      }
+    }
+  });
+  return response.results.map((page) => page.properties.Slug.rich_text[0]?.plain_text);
+};
+
+module.exports = { fetchBlogData, fetchLearningData, fetchBlogsUnpublishedData, fetchLearningsUnpublishedData };

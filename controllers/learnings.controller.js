@@ -1,35 +1,6 @@
-const fs = require('fs');
-const { NotionToMarkdown } = require('notion-to-md');
-
-const notion = require('../lib/notionAPI');
 const supabase = require('../lib/supabaseAPI');
 
-const notionLearningDatabaseId = fs.existsSync(process.env.NOTION_LEARNING_DATABASE_ID_FILE) ? fs.readFileSync(process.env.NOTION_LEARNING_DATABASE_ID, 'utf8').trim() : process.env.NOTION_LEARNING_DATABASE_ID;
-
-// * notion-to-mdの初期化
-const n2m = new NotionToMarkdown({ notionClient: notion });
-
 // * メタデータ取得メソッド
-// const getPageMetaData = (page, type) => {
-//   const getTags = (tags) => {
-//     const allTags = tags.map((tag) => {
-//       return tag.name;
-//     });
-//     return allTags;
-//   };
-//   const metadata = {
-//     title: page.properties.Title.title[0]?.plain_text || '',
-//     description: page.properties.Description.rich_text[0]?.plain_text || '',
-//     slug: page.properties.Slug.rich_text[0]?.plain_text || '',
-//   };
-//   if (type === 'parent') {
-//     metadata.date = page.properties.Date.date.start;
-//     metadata.tags = getTags(page.properties.Tags.multi_select);
-//     metadata.image = page.properties.Image.files[0] || null;
-//     metadata.premium = page.properties.Premium.checkbox;
-//   };
-//   return metadata;
-// };
 const getPageMetadata = (learning, type) => {
   if (type === 'parent') {
     return {
@@ -51,22 +22,9 @@ const getPageMetadata = (learning, type) => {
     }
   }
 }
-// * 子ブロックを取得
-const getBlockChildren = async (blockId) => {
-  const response = await notion.blocks.children.list({ block_id: blockId });
-  return response.results;
-};
-
-const getDatabaseItems = async (databaseId) => {
-  const response = await notion.databases.query({
-    database_id: databaseId,
-  });
-  return response.results.map(item => getPageMetaData(item, 'child'));
-};
 
 // * ネストしたメタデータの取得メソッド
 const getNestedMetaData = (nestedPages) => {
-  console.log('nestedPages =>', nestedPages);
   const nestedMetadatas = nestedPages.map((nestedPage) => {
     return {
       title: nestedPage.title,
@@ -135,8 +93,6 @@ exports.getSingleLearningPage = async (req, res) => {
 
     const childPages = parentResponse.data.nestedPages[0];
     const childPage = childPages.find((childPage) => childPage.slug === childSlug);
-
-    console.log('childPage =>', childPage);
 
     const metadata = getPageMetadata(childPage, 'child');
     const markdown = childPage.content;

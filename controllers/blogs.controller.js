@@ -1,5 +1,4 @@
 const supabase = require('../lib/supabaseAPI');
-const fs = require('fs');
 
 // * メタ情報を取得するための関数
 const getPageMetaData = (blog) => {

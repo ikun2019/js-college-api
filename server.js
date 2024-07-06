@@ -2,17 +2,26 @@ const express = require('express');
 const cors = require('cors');
 const cron = require('node-cron');
 
-const { fetchBlogData, fetchLearningData } = require('./services/notionService');
-const { saveBlogToSupabaes, saveLearningToSupabase } = require('./services/supabaseService');
+const { fetchBlogData, fetchLearningData, fetchBlogsUnpublishedData, fetchLearningsUnpublishedData } = require('./services/notionService');
+const { saveBlogToSupabaes, saveLearningToSupabase, deleteBlogsFromSupabase, deleteLearningsFromSupabase } = require('./services/supabaseService');
 
 // * notionデータをsupabaseに保存
 async function syncData() {
   try {
     const notionBlogsData = await fetchBlogData();
     await saveBlogToSupabaes(notionBlogsData);
+
     const notionLearningsData = await fetchLearningData();
     await saveLearningToSupabase(notionLearningsData);
-    console.log('Notion Learnings Data =>', notionLearningsData);
+
+    const unpublishedBlogs = await fetchBlogsUnpublishedData();
+    if (unpublishedBlogs.length > 0) {
+      await deleteBlogsFromSupabase(unpublishedBlogs);
+    }
+    const unpublishedLearnings = await fetchLearningsUnpublishedData();
+    if (unpublishedLearnings.length > 0) {
+      await deleteLearningsFromSupabase(unpublishedLearnings);
+    }
   } catch (error) {
     console.error('Error', error);
   }
