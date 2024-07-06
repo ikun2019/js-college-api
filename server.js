@@ -18,13 +18,13 @@ async function syncData() {
   }
 };
 
-syncData();
+// syncData();
 
 // * データの同期をするにあたっての定期的なスケジュール
-// cron.schedule('0 * * * *', () => {
-//   console.log('Running data sync');
-//   syncData();
-// });
+cron.schedule('0 * * * *', () => {
+  console.log('Running data sync');
+  syncData();
+});
 
 // * routerのインポート
 const blogsRouter = require('./routes/blogs.router');

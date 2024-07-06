@@ -42,6 +42,13 @@ const getPageMetadata = (learning, type) => {
       content: learning.content,
       premium: learning.premium,
     }
+  } else {
+    return {
+      title: learning.title,
+      description: learning.description,
+      slug: learning.slug,
+      premium: learning.premium,
+    }
   }
 }
 // * 子ブロックを取得
@@ -120,50 +127,19 @@ exports.getSingleLearningPage = async (req, res) => {
   try {
     const { slug, childSlug } = req.params;
     // 親ページのクエリ
-    const response = await notion.databases.query({
-      database_id: notionLearningDatabaseId,
-      filter: {
-        property: 'Slug',
-        formula: {
-          string: {
-            equals: slug,
-          }
-        }
-      }
-    });
+    const parentResponse = await supabase.from('learnings').select('nestedPages').eq('slug', slug).single();
 
-    if (response.results.length === 0) {
+    if (!parentResponse.data) {
       return res.status(404).json({ error: '指定された記事が存在しません' });
     }
 
-    const page = response.results[0];
-    const nestedMetaDatas = await getNestedMetaData(page.id);
-    const childPageDatabaseId = nestedMetaDatas[0]?.database_id;
+    const childPages = parentResponse.data.nestedPages[0];
+    const childPage = childPages.find((childPage) => childPage.slug === childSlug);
 
-    if (!childPageDatabaseId) {
-      return res.status(404).json({ error: '指定されたデータベースが存在しません' });
-    }
+    console.log('childPage =>', childPage);
 
-    // 子ページのクエリ
-    const childResponse = await notion.databases.query({
-      database_id: childPageDatabaseId,
-      filter: {
-        property: 'Slug',
-        formula: {
-          string: {
-            equals: childSlug,
-          }
-        }
-      }
-    });
-    if (childResponse.results.length === 0) {
-      return res.status(404).json({ error: '指定されたページが存在しません' });
-    }
-
-    const childPage = childResponse.results[0];
-    const metadata = getPageMetaData(childPage, 'child');
-    const mdBlock = await n2m.pageToMarkdown(childPage.id);
-    const mdString = n2m.toMarkdownString(mdBlock);
+    const metadata = getPageMetadata(childPage, 'child');
+    const markdown = childPage.content;
 
     // 見出しタグの取得のための動的インポート
     const { unified } = await import('unified');
@@ -180,12 +156,12 @@ exports.getSingleLearningPage = async (req, res) => {
         });
       });
 
-    const parsedTree = processor.parse(mdString.parent);
+    const parsedTree = processor.parse(markdown);
     processor.runSync(parsedTree);
 
     res.status(200).json({
       metadata: metadata,
-      markdown: mdString,
+      markdown: markdown,
       headings: headings,
     }
     );
