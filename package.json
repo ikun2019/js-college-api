@@ -14,7 +14,7 @@
 	},
 	"dependencies": {
 		"@notionhq/client": "^2.2.15",
-		"@supabase/supabase-js": "^2.44.2",
+		"@supabase/supabase-js": "^2.44.3",
 		"cors": "^2.8.5",
 		"express": "^4.19.2",
 		"node-cron": "^3.0.3",
