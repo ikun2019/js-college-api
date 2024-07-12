@@ -1,6 +1,12 @@
 const router = require('express').Router();
 
-const { updateProfile, getProfile } = require('../controllers/auth.controller');
+const { updateProfile, getProfile, signup, signin } = require('../controllers/auth.controller');
+
+// @POST /api/auth/signup
+router.post('/signup', signup);
+
+// @POST /api/auth/signin
+router.post('/signin', signin);
 
 // @PUT /api/auth/profile
 router.put('/profile', updateProfile);
