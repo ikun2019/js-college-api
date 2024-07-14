@@ -29,10 +29,71 @@ exports.signin = async (req, res) => {
     password
   });
   console.log('SignIn Data =>', data);
+  console.log('SignIn Error =>', error);
   if (error) {
     return res.status(400).json({ error: error.message });
   }
-  return res.status(400).json(data.session.access_token);
+  return res.status(200).json(data.session.access_token);
+};
+
+// @GET/api/auth/signout
+exports.signout = async (req, res) => {
+  const { error } = await supabase.auth.signOut();
+  if (error) {
+    return res.status(400).json({ error: error.message });
+  }
+  return res.status(200).json('Signout is success');
+};
+
+// @GET /api/auth/github
+exports.github = async (req, res) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: `${process.env.SUPABASE_URL}/auth/v1/callback`
+      }
+    });
+    console.log('data =>', data);
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    res.json({ url: data.url });
+  } catch (error) {
+    res.status(404).json({ error: error.message });
+  }
+};
+// @GET /api/auth/gmail
+exports.gmail = async (req, res) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${process.env.SUPABASE_URL}/auth/v1/callback`
+      }
+    });
+    console.log('data =>', data);
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    res.json({ url: data.url });
+  } catch (error) {
+    res.status(404).json({ error: error.message });
+  }
+};
+
+// @GET /auth/callback
+exports.callback = async (req, res) => {
+  const { code } = req.query;
+  console.log('code', code);
+  if (!code) {
+    return res.status(400).json({ error: 'No code token' });
+  }
+  const { user, error } = await supabase.auth.getToken(access_token);
+  if (error) {
+    return res.status(400).json({ error: error.message });
+  };
+  res.status(200).json({ user });
 };
 
 // @PUT /api/auth/profile
@@ -71,6 +132,7 @@ exports.getProfile = async (req, res) => {
   try {
     const token = req.headers.authorization?.split('Bearer ')[1];
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+    console.log('data =>', user);
     if (userError || !user) {
       return res.status(401).json({ error: 'tokenが無効です' });
     }
@@ -78,10 +140,9 @@ exports.getProfile = async (req, res) => {
     if (profileError) {
       return res.status(401).json({ error: profileError.message });
     }
-    res.status(200).json({ profile });
+    res.status(200).json({ profile, user });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'error' });
   }
-  res.status(200).json();
 };
