@@ -1,4 +1,5 @@
 const supabase = require('../lib/supabaseAPI');
+const { fetchLearningData } = require('../services/notionService');
 
 // * メタデータ取得メソッド
 const getPageMetadata = (learning, type) => {
@@ -35,7 +36,6 @@ const getNestedMetaData = (nestedPages) => {
   });
   return nestedMetadatas;
 };
-
 
 // @GET /api/learnings
 exports.getAllLearnings = async (req, res) => {
@@ -124,5 +124,20 @@ exports.getSingleLearningPage = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'error' });
+  }
+};
+
+// @GET /api/learnings/get-new-image-url
+exports.getNewImageUrl = async (req, res) => {
+  try {
+    const learnings = await fetchLearningData(); // notionからlearningsデータを取得
+    const newImageUrl = learnings[0]?.image_url;
+    if (!newImageUrl) {
+      return res.status(404).json({ error: 'Image url not found.' });
+    }
+    console.log('newImageUrl =>', newImageUrl);
+    res.json({ newImageUrl });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed fetch image url!' });
   }
 };
