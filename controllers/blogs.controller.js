@@ -1,4 +1,4 @@
-const { Client } = require('@notionhq/client');
+const notion = require('../lib/notionAPI');
 const { NotionToMarkdown } = require('notion-to-md');
 const NodeCache = require('node-cache');
 const cron = require('node-cron');
@@ -7,11 +7,7 @@ const fs = require('fs');
 // * キャッシュの初期化
 const cache = new NodeCache({ stdTTL: 600 });
 // * notionの初期化
-const notionToken = fs.existsSync(process.env.NOTION_TOKEN_FILE) ? fs.readFileSync(process.env.NOTION_TOKEN_FILE, 'utf8').trim() : process.env.NOTION_TOKEN;
 const notionBlogDatabaseId = fs.existsSync(process.env.NOTION_BLOG_DATABASE_ID_FILE) ? fs.readFileSync(process.env.NOTION_BLOG_DATABASE_ID_FILE, 'utf8').trim() : process.env.NOTION_BLOG_DATABASE_ID;
-const notion = new Client({
-  auth: notionToken,
-})
 // * n2mの初期化
 const n2m = new NotionToMarkdown({ notionClient: notion });
 // * メタ情報を取得するための関数
