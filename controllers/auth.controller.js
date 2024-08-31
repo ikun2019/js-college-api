@@ -37,7 +37,7 @@ exports.getProfile = async (req, res) => {
   try {
     const token = req.headers.authorization?.split('Bearer ')[1];
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    console.log('data =>', user);
+    // console.log('data =>', user);
     if (userError || !user) {
       return res.status(401).json({ error: 'tokenが無効です' });
     }

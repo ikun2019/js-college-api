@@ -1,11 +1,11 @@
 const router = require('express').Router();
-const { getAllLearnings, getSingleLearning, getSingleLearningPage, getNewImageUrl } = require('../controllers/learnings.controller');
+const { getAllLearnings, getSingleLearning, getSingleLearningPage } = require('../controllers/learnings.controller');
 
 // @GET /api/learnings
 router.get('/', getAllLearnings);
 
 // @GET /api/learnings/get-new-image-url
-router.get('/get-new-image-url', getNewImageUrl);
+// router.get('/get-new-image-url', getNewImageUrl);
 
 // @GET /api/learnings/:slug
 router.get('/:slug', getSingleLearning);

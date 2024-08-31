@@ -1,6 +1,6 @@
 const router = require('express').Router();
 
-const { getAllBlogs, getSingleBlog, getTagBlogs } = require('../controllers/blogs.controller');
+const { getAllBlogs, getSingleBlog } = require('../controllers/blogs.controller');
 
 // @GET /api/blogs
 router.get('/', getAllBlogs);
@@ -9,6 +9,6 @@ router.get('/', getAllBlogs);
 router.get('/:slug', getSingleBlog);
 
 // @GET /api/blogs/tag/:tag
-router.get('/tag/:tag', getTagBlogs);
+// router.get('/tag/:tag', getTagBlogs);
 
 module.exports = router;

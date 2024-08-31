@@ -17,6 +17,7 @@
 		"@supabase/supabase-js": "^2.44.3",
 		"cors": "^2.8.5",
 		"express": "^4.19.2",
+		"node-cache": "^5.1.2",
 		"node-cron": "^3.0.3",
 		"notion-to-md": "^3.1.1",
 		"remark-parse": "^11.0.0",
