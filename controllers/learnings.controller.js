@@ -2,12 +2,16 @@ const { Client } = require('@notionhq/client');
 const { NotionToMarkdown } = require('notion-to-md');
 const NodeCache = require('node-cache');
 const cron = require('node-cron');
+const fs = require('fs');
+
 
 // * キャッシュの初期化
 const cache = new NodeCache({ stdTTL: 3300 });
 // * notionの初期化
+const notionToken = fs.existsSync(process.env.NOTION_TOKEN_FILE) ? fs.readFileSync(process.env.NOTION_TOKEN_FILE, 'utf8').trim() : process.env.NOTION_TOKEN;
+const notionLearningDatabaseId = fs.existsSync(process.env.NOTION_LEARNING_DATABASE_ID_FILE) ? fs.readFileSync(process.env.NOTION_LEARNING_DATABASE_ID_FILE, 'utf8').trim() : process.env.NOTION_LEARNING_DATABASE_ID;
 const notion = new Client({
-  auth: process.env.NOTION_TOKEN,
+  auth: notionToken,
 });
 // * n2mの初期化
 const n2m = new NotionToMarkdown({ notionClient: notion });
@@ -106,7 +110,7 @@ const prefetchLearnings = async () => {
   try {
     // learnings_allのキャッシュ
     const response = await notion.databases.query({
-      database_id: process.env.NOTION_LEARNING_DATABASE_ID,
+      database_id: notionLearningDatabaseId,
       filter: {
         property: 'Published',
         checkbox: { equals: true }
@@ -175,7 +179,7 @@ exports.getAllLearnings = async (req, res) => {
   try {
     const parentMetadatas = await getCachedData(cacheKey, async () => {
       const response = await notion.databases.query({
-        database_id: process.env.NOTION_LEARNING_DATABASE_ID,
+        database_id: notionLearningDatabaseId,
         filter: {
           property: 'Published',
           checkbox: { equals: true }
@@ -204,7 +208,7 @@ exports.getSingleLearning = async (req, res) => {
   try {
     const responseSlug = await getCachedData(cacheKey, async () => {
       const response = await notion.databases.query({
-        database_id: process.env.NOTION_LEARNING_DATABASE_ID,
+        database_id: notionLearningDatabaseId,
         filter: {
           and: [
             { property: 'Published', checkbox: { equals: true } },
@@ -240,7 +244,7 @@ exports.getSingleLearningPage = async (req, res) => {
   try {
     const responseLearning = await getCachedData(cacheKey, async () => {
       const response = await notion.databases.query({
-        database_id: process.env.NOTION_LEARNING_DATABASE_ID,
+        database_id: notionLearningDatabaseId,
         filter: {
           and: [
             { property: 'Published', checkbox: { equals: true } },

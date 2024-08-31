@@ -2,12 +2,15 @@ const { Client } = require('@notionhq/client');
 const { NotionToMarkdown } = require('notion-to-md');
 const NodeCache = require('node-cache');
 const cron = require('node-cron');
+const fs = require('fs');
 
 // * キャッシュの初期化
 const cache = new NodeCache({ stdTTL: 600 });
 // * notionの初期化
+const notionToken = fs.existsSync(process.env.NOTION_TOKEN_FILE) ? fs.readFileSync(process.env.NOTION_TOKEN_FILE, 'utf8').trim() : process.env.NOTION_TOKEN;
+const notionBlogDatabaseId = fs.existsSync(process.env.NOTION_BLOG_DATABASE_ID_FILE) ? fs.readFileSync(process.env.NOTION_BLOG_DATABASE_ID_FILE, 'utf8').trim() : process.env.NOTION_BLOG_DATABASE_ID;
 const notion = new Client({
-  auth: process.env.NOTION_TOKEN,
+  auth: notionToken,
 })
 // * n2mの初期化
 const n2m = new NotionToMarkdown({ notionClient: notion });
@@ -27,7 +30,7 @@ const getPageMetaData = (blog) => {
 const prefetchBlogs = async () => {
   try {
     const blogsResponse = await notion.databases.query({
-      database_id: process.env.NOTION_BLOG_DATABASE_ID,
+      database_id: notionBlogDatabaseId,
       filter: {
         property: 'Published',
         checkbox: { equals: true }
@@ -85,7 +88,7 @@ exports.getAllBlogs = async (req, res) => {
   try {
     const allBlogsMetadatas = await getCachedData(cacheKey, async () => {
       const response = await notion.databases.query({
-        database_id: process.env.NOTION_BLOG_DATABASE_ID,
+        database_id: notionBlogDatabaseId,
         filter: filter,
       });
       const allBlogsResponseResults = response.results;
@@ -111,7 +114,7 @@ exports.getSingleBlog = async (req, res) => {
   try {
     const blogMetadataAndMarkdown = await getCachedData(cacheKey, async () => {
       const response = await notion.databases.query({
-        database_id: process.env.NOTION_BLOG_DATABASE_ID,
+        database_id: notionBlogDatabaseId,
         filter: {
           and: [
             { property: 'Published', checkbox: { equals: true } },
