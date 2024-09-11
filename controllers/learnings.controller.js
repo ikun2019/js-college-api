@@ -9,7 +9,6 @@ const fs = require('fs');
 const cache = new NodeCache({ stdTTL: 3300 });
 // * notionの初期化
 const notionLearningDatabaseId = fs.existsSync(process.env.NOTION_LEARNING_DATABASE_ID_FILE) ? fs.readFileSync(process.env.NOTION_LEARNING_DATABASE_ID_FILE, 'utf8').trim() : process.env.NOTION_LEARNING_DATABASE_ID;
-console.log('notionLearningDatabaseId =>', notionLearningDatabaseId);
 
 // * n2mの初期化
 const n2m = new NotionToMarkdown({ notionClient: notion });
@@ -27,6 +26,7 @@ const getPageMetadata = (learning, type) => {
     }
   } else {
     return {
+      number: learning.number,
       title: learning.title,
       description: learning.description,
       slug: learning.slug,
@@ -57,12 +57,14 @@ const getHeadeingsFromMarkdown = (markdown) => {
 }
 // * childのメタデータを取得する関数
 const getChildMetadata = (page) => {
+  const number = page.properties.Number?.number || 0;
   const title = page.properties.Title.title[0]?.plain_text || '';
   const description = page.properties.Description.rich_text[0]?.plain_text || '';
   const slug = page.properties.Slug.rich_text[0]?.plain_text || '';
   const published = page.properties.Published?.checkbox;
   const premium = page.properties.Premium?.checkbox;
   return {
+    number,
     title,
     description,
     slug,
@@ -220,7 +222,7 @@ exports.getSingleLearning = async (req, res) => {
 
       return {
         parentMetadata: data.properties,
-        nestedMetadatas: nestedMetadatas[0],
+        nestedMetadatas: nestedMetadatas[0].sort((a, b) => a.number - b.number),
       }
     });
 
